@@ -1,0 +1,48 @@
+﻿@page
+@model RM_Warehouse.Pages.ZeroInventoryReportModel
+@{
+}
+
+@using System.Data;
+<form method="post">
+    
+   
+    <h4>Zero Inventory Location</h4>
+
+    @*BELOW FORM FIELDS ARE FOR SERACHING PICK LOGS FROM DATABASE*@
+
+    <div class="row">
+        <div class="col-4 col-md-2"><label for="Warehouse">Enter Item Code:</label></div>
+        <div class="col-8 col-md-3">
+           
+          <input type="text" asp-for="ItemCode"/>
+        </div>
+    </div>
+  
+    <div class="row">
+        
+        <div class="col-3 col-md-1">
+            <button  id="btnSearch" type="button"> 
+                <i class="fas fa-search" style="color:blue;" title="SEARCH"></i>
+            </button>
+        </div>
+    </div>    
+</form>
+
+        <script>
+            $(document).ready(function () {
+                $("#btnSearch").click(function () {
+          
+            var ItemCode = $("#ItemCode").val();
+           
+            var ReportURL = '@ViewData["ReportURL"]';
+            var strWinFeature = "menubar=no,toolbar=no,location=no,resizable=yes,scrollbars=yes,width=800 ,height=850,status=no,left=60,top=50"
+
+            var strPopupURL = ReportURL + "/Report/InventoryReport?itemCode=" + ItemCode;
+
+            winNew = window.open(strPopupURL, "_blank", strWinFeature)
+            return false;
+                });
+            })
+
+        </script>
