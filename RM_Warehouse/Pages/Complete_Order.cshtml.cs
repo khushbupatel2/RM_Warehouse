@@ -7,7 +7,7 @@ using System.Data;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR COMPLETE ORDER PAGE  
-    public class Complete_OrderModel : PageModel
+    public class Complete_OrderModel : BasePageModel
     {
         public DataSet nested_tables { get; set; }
 
@@ -45,12 +45,7 @@ namespace RM_Warehouse.Pages
         public int item_id { get; set; }
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+          
             Fill_Orders();
             return Page();
         }
@@ -59,8 +54,8 @@ namespace RM_Warehouse.Pages
         public void Fill_Orders()
         {
             Order_Outbound order = new Order_Outbound();
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_orders = order.GetOrders(warehouse,"PICK");
+			
+			dt_orders = order.GetOrders("",BaseWarehouse, "PICK");
 
             nested_tables = new DataSet();
             if (dt_orders == null)
@@ -87,9 +82,8 @@ namespace RM_Warehouse.Pages
         public IActionResult OnPostCompleteOrder(long order_id_1)
         {
             Order_Outbound order = new Order_Outbound();
-            string user=HttpContext.Session.GetString("username");
-            
-            order.UpdateCompleteOrder(order_id_1, user);
+           
+            order.UpdateCompleteOrder(order_id_1, BaseUserName);
             TempData["ConfirmationMessage"] = string.Format("Order ID:{0} is Completed", order_id_1);
 
             return Redirect("Complete_Order");

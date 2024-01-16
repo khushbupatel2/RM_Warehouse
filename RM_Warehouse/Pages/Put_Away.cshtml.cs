@@ -7,7 +7,7 @@ using System.Data;
 
 namespace RM_Warehouse.Pages
 {
-    public class Put_AwayModel : PageModel
+    public class Put_AwayModel : BasePageModel
     {
 
         // THIS CLASS IS FOR ORDER MANAGEMENT -> INBOUND ORDER -> PUT AWAY PAGE. 
@@ -61,28 +61,30 @@ namespace RM_Warehouse.Pages
         public static DataTable? dt_orders { get; set; }
 
         public DataTable dt_items { get; set; }
+        [BindProperty]
+        public string Search_PONumber { get; set; }
 
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-            Fill_Orders();
+            
+            Fill_Orders(Search_PONumber);
             Fill_Locations();
 
             return Page();
         }
-
+        public IActionResult OnPostOrderList()
+        {
+            Fill_Orders(Search_PONumber);
+          
+            return Page();
+        }
         // THIS FUNCTION POPULATES NESTED DATATABLES WITH INBOUND RECEIVED ORDERS.ALL ITEMS ARE RECEIVED
 
-        public void Fill_Orders()
+        public void Fill_Orders(string ponumber)
         {
             Order_Inbound order = new Order_Inbound();
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_orders = order.GetOrders(warehouse,"RECEIVED");
+		
+			dt_orders = order.GetOrders(BaseWarehouse, ponumber, "RECEIVED");
 
             nested_tables = new DataSet();
 			if (dt_orders == null)
@@ -141,9 +143,9 @@ namespace RM_Warehouse.Pages
 
         public void Fill_Locations()
         {
-            string warehouse = HttpContext.Session.GetString("warehouse");
+            
             Inhand_Inventory in_inv = new Inhand_Inventory();
-            dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(warehouse);
+            dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(BaseWarehouse);
 
             // creating location list and populating it with datatable dt.
 
@@ -187,11 +189,10 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
 
-            string user = HttpContext.Session.GetString("username");
-
+           
             Put_Away pa = new Put_Away();
             
-            pa.SaveInventory(details_id,location_id_form, item_id, quantity_placed, expiry_date,user);
+            pa.SaveInventory(details_id,location_id_form, item_id, quantity_placed, expiry_date,BaseWarehouse);
             
 
             // IF ALL ITEMS ARE PLACED, THEN REMOVE IT FROM DISPLAY GRID
@@ -223,10 +224,10 @@ namespace RM_Warehouse.Pages
 
         public void Fill_Locations_For_Item_ID(int item_id)
         {
-            string warehouse = HttpContext.Session.GetString("warehouse");
+           
             Put_Away put_Away = new Put_Away();
             
-            dt_loc_for_item_id= put_Away.Get_Locations_For_Item_ID(item_id, warehouse);
+            dt_loc_for_item_id= put_Away.Get_Locations_For_Item_ID(item_id, BaseWarehouse);
         }
     }
 }

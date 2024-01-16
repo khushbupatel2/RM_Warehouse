@@ -49,7 +49,7 @@
 				<!--<h1><a href="index.html" class="logo">Hunter Express</a></h1>-->
 				<img src="~/logo.svg" width="150px" height="150px" style="position:relative;top:-20px;left:38px;" />
 				<br/>
-				<span style="color:yellow">@Context.Session.GetString("warehouse")</span>
+				<span style="color:yellow">@ViewData["BaseUserName"]</span>
 				<ul class="list-unstyled components mb-1">
 					@if (IndexModel.flag_Order_Entry_Inbound || IndexModel.flag_Receive_Order || IndexModel.flag_Put_Away || IndexModel.flag_Order_Entry_Outbound || IndexModel.flag_Pick || IndexModel.flag_Complete_Order)
 					{
@@ -182,7 +182,13 @@
 								@if (IndexModel.flag_0_Inventory)
 								{
 									<li>
-										<a href="/0_Inventory" style="font-size:smaller;text-decoration:none;" onclick="spinner();">0 Inventory</a>
+										<a href="/InventoryReport" style="font-size:smaller;text-decoration:none;" onclick="spinner();">Inventory</a>
+									</li>
+								}
+								@if (IndexModel.flag_ZeroInventoryReport)
+								{
+									<li>
+										<a href="/ZeroInventoryReport" style="font-size:smaller;text-decoration:none;" onclick="spinner();">Zero Inventory</a>
 									</li>
 								}
 							</ul>
@@ -235,8 +241,9 @@
 					}
 
 							<li>
-						<a asp-page="Welcome" asp-page-handler="Logout" style="font-size:smaller;text-decoration:none;">Welcome <span style="color:yellow">@Context.Session.GetString("username")</span> -- Logout</a>
+						<a asp-page="Welcome" asp-page-handler="Logout" style="font-size:smaller;text-decoration:none;">Welcome <span style="color:yellow">@ViewData["BaseUserName"]</span> -- Logout</a>
 							</li>
+						</ul>
 						</ul>
 
 

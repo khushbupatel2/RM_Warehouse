@@ -34,17 +34,28 @@
 
 @*BELOW FORM HAS METHOD OnSelectChanged WHICH IS CALLED FROM DROPDOWN ITEM_CODES ON SELECT INDEX CHANGED*@
 
-<form method="post" asp-page-handler="OnSelectChanged">
+
     @if (Model.flag_no_order_open)
     {
-        <br />
-        <a href="Order_Entry_Outbound" onclick="spinner();">Show All Orders.</a>
-        <br />
-
+    <form method="post">
         <button asp-page-handler="Add_Order">
             <i class="fa-solid fa-plus" style="color:blue;" title="ADD NEW ORDER"></i>
         </button>
+    </form>
+    <br />
+    <form method="post">
+        <b>Search Po number:</b>
+
+        <input type="text" asp-for="Search_PONumber" />
+        <button asp-page-handler="OrderList" onclick="spinner();">
+            Search
+        </button>
+        <a href="Order_Entry_Outbound" onclick="spinner();">Show All Orders.</a>
+
+    </form>
+        
     }
+<form method="post" asp-page-handler="OnSelectChanged">
 @if (Model.flag_orders)
 {
    
@@ -188,7 +199,7 @@
     <div class="row">
         <div class="col-4 col-md-2"><label for="Order_Date">Order Date:</label></div>
             <div class="col-8 col-md-4"><input asp-for="@Model.Order_Date" type="datetime-local" value="@Model.Order_Date.ToString("yyyy-MM-ddTHH:mm:ss")" onkeypress="return event.keyCode != 13;" /></div>
-        <div class="col-4 col-md-2"><label for="PONumber">PONumber</label></div>
+        <div class="col-4 col-md-2"><label for="PONumber">RM PONumber</label></div>
             <div class="col-8 col-md-4"><input type="text" asp-for="@Model.PONumber" onkeypress="return event.keyCode != 13;" /></div>
     </div>
     

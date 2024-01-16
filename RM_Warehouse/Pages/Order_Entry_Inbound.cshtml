@@ -25,21 +25,33 @@
         $('.Ddl_Items').select2();
         });
 </script>
-<form method="post">
+
 
 @if(Model.flag_no_order_open)
 {
-<br />
-<a href="Order_Entry_Inbound" onclick="spinner();">Show All Orders.</a>
 
-<br />
-
+    <br />
+<form method="post">
     <button asp-page-handler="Add_Order">
         <i class="fa-solid fa-plus" style="color:blue;" title="ADD NEW ORDER"></i>
     </button>
+    </form>
+        <br />
+        <form method="post">
+        <b>Search Po number:</b>
+
+        <input type="text" asp-for="Search_PONumber" />
+        <button asp-page-handler="OrderList" onclick="spinner();">
+            Search
+        </button>          
+        <a href="Order_Entry_Inbound" onclick="spinner();">Show All Orders.</a>
+
+        </form>
 }
+    <form method="post">
 @if (Model.flag_orders)
 {
+   
     @*BELOW GRID SHOWS INBOUND ORDERS WITH ORDER_STATUS='CREATED'
     ALSO,NESTED TABLE SHOWS ORDER DETAILS WITH ITEMS IS_RECEIVED=false.
     *@
@@ -190,14 +202,14 @@
             <div class="col-4 col-md-2">@*<input type="text" asp-for="@Model.PONumber" onkeypress="return event.keyCode != 13;" />*@
                 <label for="PONumber"><input type="hidden" asp-for="@Model.PONumber" value="@Model.PONumber" />@Model.PONumber</label>
             </div>
-            @if (@Order_Entry_InboundModel.Order_ID == 0)
+            @* @if (@Order_Entry_InboundModel.Order_ID == 0)
             {
                 <div class="col-2 col-md-1">
                     <button asp-page-handler="GeneratePONumber" onclick="spinner();">
                         <i class="fa fa-info" style="color:green;" title="GENERATE PONUMBER"></i>
                     </button>
                 </div>
-            }
+            } *@
             
 
     </div>

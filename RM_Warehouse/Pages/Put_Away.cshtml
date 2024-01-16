@@ -38,6 +38,17 @@
 <form method="post">
 @if (Model.flag_orders)
 {
+       
+            <b>Search Po number:</b>
+
+            <input type="text" asp-for="Search_PONumber" />
+            <button asp-page-handler="OrderList" onclick="spinner();">
+                Search
+            </button>
+            <a href="Put_Away" onclick="spinner();">Show All Orders.</a>
+
+        
+
    @* BELOW GRID SHOWS INBOUND RECIEVED ORDERS WITH RECEIVED ITEMS.
        THIS ALSO HAS PUT AWAY BUTTON FOR EACH DETAIL ROW.
    *@

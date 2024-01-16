@@ -10,7 +10,7 @@ namespace RM_Warehouse.Pages
 {
 
     // THIS CLASS IS USED FOR ORDER MANAGEMENT -> OUTBOUND ORDER -> ORDER ENTRY PAGE.
-    public class Order_Entry_OutboundModel : PageModel
+    public class Order_Entry_OutboundModel : BasePageModel
     {
         [BindProperty]
         public string Currency { get; set; }
@@ -68,16 +68,13 @@ namespace RM_Warehouse.Pages
         [BindProperty]
 
         public int item_id { get; set; }
+        [BindProperty]
+        public string Search_PONumber { get; set; }
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+            
             Fill_ItemList();
-            Fill_Orders();
+            Fill_Orders(Search_PONumber);
 
             flag_no_order_open = true;
             return Page();
@@ -85,13 +82,17 @@ namespace RM_Warehouse.Pages
 
         // THIS FUNCTION POPULTAES DROPDOWN ITEM_CODE_WITH_DESCRIPTION_QTY_IN_HAND WITH ALL ITEMS
         // WITH QUANTITY IN HAND ,PRESENT IN DATABASE.
-
+        public IActionResult OnPostOrderList()
+        {
+            Fill_Orders(Search_PONumber);
+            flag_no_order_open = true;
+            return Page();
+        }
         public void Fill_ItemList()
         {
             Order_Outbound order_Outbound = new Order_Outbound();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            
-            items = order_Outbound.ItemsAvailable_ItemCode_Description(warehouse);
+           
+            items = order_Outbound.ItemsAvailable_ItemCode_Description(BaseWarehouse);
 
             itemList = new List<Item_Codes_Description_Qty_In_Hand>();
             if (items == null)
@@ -152,18 +153,17 @@ namespace RM_Warehouse.Pages
                 flag_new_order_form = true;
                 return Page();
             }
-            string user = HttpContext.Session.GetString("username");
-
+            
             Order_Outbound order = new Order_Outbound();
             if (flag_updated)
             {
-                order.UpdateOrder(Order_ID, Order_Date, PONumber, user);
+                order.UpdateOrder(Order_ID, Order_Date, PONumber, BaseUserName);
                 return Redirect("Order_Entry_Outbound");
             }
             else
             {
-				string warehouse = HttpContext.Session.GetString("warehouse");
-				Order_ID = order.InsertNewOrder(Order_Date, PONumber, user,warehouse);
+				
+				Order_ID = order.InsertNewOrder(Order_Date, PONumber, BaseUserName,BaseWarehouse);
                 flag_new_order_form = true;
                 flag_item_entry_form = true;
             }
@@ -180,7 +180,7 @@ namespace RM_Warehouse.Pages
             flag_no_order_open = true;
 
             Reset_Order_Form();
-            Fill_Orders();
+            Fill_Orders(Search_PONumber);
             return Page();
         }
 
@@ -278,11 +278,11 @@ namespace RM_Warehouse.Pages
         // THIS FUNCTION POPULTES OUTBOUND ORDERS GRID WITH ORDER STAUS='OPEN'.
         // NESTED ITEMS DETAILS ARE WITH IS_RECEIVED=false FIELD.
 
-        public void Fill_Orders()
+        public void Fill_Orders(string PONUMBER)
         {
             Order_Outbound order = new Order_Outbound();
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_orders = order.GetOrders(warehouse);
+			
+			dt_orders = order.GetOrders(PONUMBER,BaseWarehouse);
 
             nested_tables = new DataSet();
             if (dt_orders == null)
@@ -428,12 +428,20 @@ namespace RM_Warehouse.Pages
             
             Item item = new Item();
             DataRow row = item.Get_By_Item_ID(item_id);
+            DataRow dataRow = item.Get_By_Warehouse(BaseWarehouse);
 
             if (row["Price"] != DBNull.Value)
             {
-                decimal priceData = ((Convert.ToDecimal(row["Price"]) * 20) / 100) + Convert.ToDecimal(row["Price"]);
-                var data = priceData.ToString("0.00");
-                item_price = Convert.ToDecimal(data);
+                if (Convert.ToBoolean(dataRow["IsMarkup"]))
+                {
+                    decimal priceData = ((Convert.ToDecimal(row["Price"]) * Convert.ToDecimal(dataRow["MarkupPer"])) / 100) + Convert.ToDecimal(row["Price"]);
+                    var data = priceData.ToString("0.00");
+                    item_price = Convert.ToDecimal(data);
+                }
+                else
+                {
+                    item_price = Convert.ToDecimal(row["Price"]);
+                }
             }
             else
                 item_price = 0;

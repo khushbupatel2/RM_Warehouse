@@ -8,7 +8,7 @@ using System.Data;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR ADMIN PAGES - PAGE
-    public class Admin_PagesModel : PageModel
+    public class Admin_PagesModel : BasePageModel
     {
         [BindProperty]
         public bool Chk_Submit_to_Accounts_Dept { get; set; }
@@ -33,12 +33,7 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+            
            // THIS CODE CLEARS USER'S PAGES TO NULL ON PAGE LOAD
 
             dt_my_pages = null;

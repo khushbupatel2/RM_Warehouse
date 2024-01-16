@@ -10,7 +10,7 @@ namespace RM_Warehouse.Pages
     // THIS CLASS IS FOR RETURN ITEMS -> RETURN FROM GARAGE PAGE.
 
 
-    public class Return_From_GarageModel : PageModel
+    public class Return_From_GarageModel : BasePageModel
     {
         [BindProperty]
         public static string rm_ponumber { get; set; }
@@ -61,12 +61,7 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+           
             Fill_ItemList();
             Fill_LocationsList();
            
@@ -77,10 +72,9 @@ namespace RM_Warehouse.Pages
 
         public void Fill_ItemList()
         {
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+           
             Item item = new Item();
-            items = item.GetAll(warehouse);
+            items = item.GetAll(BaseWarehouse);
 
             itemList = new List<Item_Codes_Description>();
             if (items == null)
@@ -101,9 +95,8 @@ namespace RM_Warehouse.Pages
         public void Fill_LocationsList()
         {
             Inhand_Inventory inhand_Inventory = new Inhand_Inventory();
-            string warehouse_name = HttpContext.Session.GetString("warehouse");
-
-            locations = inhand_Inventory.GetAll_Locations_for_Warehouse(warehouse_name);
+            
+            locations = inhand_Inventory.GetAll_Locations_for_Warehouse(BaseWarehouse);
             locationList = new List<Location_Codes>();
             if (locations == null)
                 return;
@@ -127,10 +120,9 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
 
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+           
             Return_Items return_Items = new Return_Items();
-            dt_OutBound_Details=return_Items.GetOutboundOrderDetailsByItemID(item_id_search,warehouse);
+            dt_OutBound_Details=return_Items.GetOutboundOrderDetailsByItemID(item_id_search,BaseWarehouse);
 
             flag_items = true;
             return Page();
@@ -165,8 +157,7 @@ namespace RM_Warehouse.Pages
         {
             Return_Items rt_item = new Return_Items();
 
-            string user = HttpContext.Session.GetString("username");
-            string warehouse = HttpContext.Session.GetString("warehouse");
+            
 
             if (Return_Quantity==0)
             {
@@ -193,12 +184,12 @@ namespace RM_Warehouse.Pages
             }
 
             
-            rt_item.UpdateReturnItemFromGarage(Order_ID,details_id,Return_Quantity,user,location_id,item_id,warehouse,item_price,Currency,rm_ponumber);
+            rt_item.UpdateReturnItemFromGarage(Order_ID,details_id,Return_Quantity,BaseUserName,location_id,item_id,BaseWarehouse,item_price,Currency,rm_ponumber);
 
             TempData["ConfirmationMessage"] = string.Format("Item is Returned Successfully!");
 
             Return_Items return_Items = new Return_Items();
-            dt_OutBound_Details = return_Items.GetOutboundOrderDetailsByItemID(item_id_search, warehouse);
+            dt_OutBound_Details = return_Items.GetOutboundOrderDetailsByItemID(item_id_search, BaseWarehouse);
 
             flag_items = true;
 

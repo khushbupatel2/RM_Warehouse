@@ -9,7 +9,7 @@ namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR RETURN ITEMS -> RETURN TO VENDOR PAGE.
 
-    public class Return_To_VendorModel : PageModel
+    public class Return_To_VendorModel : BasePageModel
     {
         [BindProperty]
         public bool flag_items { get; set; }
@@ -84,12 +84,7 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-            
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+           
             Fill_ItemList();
        
             return Page();
@@ -99,10 +94,9 @@ namespace RM_Warehouse.Pages
 
         public void Fill_ItemList()
         {
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+            
             Item item = new Item();
-            items = item.GetAll(warehouse);
+            items = item.GetAll(BaseWarehouse);
 
             itemList = new List<Item_Codes_Description>();
             if (items == null)
@@ -136,9 +130,8 @@ namespace RM_Warehouse.Pages
 
             Return_Items rt_items=new Return_Items();
 
-            string warehouse = HttpContext.Session.GetString("warehouse");
-   
-            dt_locations = rt_items.Get_Available_Items_and_Locations(Order_ID, Item_ID, warehouse);
+          
+            dt_locations = rt_items.Get_Available_Items_and_Locations(Order_ID, Item_ID, BaseWarehouse);
 
             flag_item_return_form = true;
             flag_locations = true;
@@ -152,8 +145,7 @@ namespace RM_Warehouse.Pages
 
         public IActionResult OnPostReturnItems(IFormCollection form)
         {
-            string user = HttpContext.Session.GetString("username");
-
+            
             //          
             string temp_inv_id = form["Inv_Id"];
             string[] temp_inv_ids = temp_inv_id.Split(',');
@@ -232,13 +224,13 @@ namespace RM_Warehouse.Pages
                 else
                     var_expiry_date = null;
 
-                rt_items.RemoveInventory(item, var_details_id, var_location_id, var_item_id, var_return_qty, var_expiry_date, user);
+                rt_items.RemoveInventory(item, var_details_id, var_location_id, var_item_id, var_return_qty, var_expiry_date, BaseUserName);
             }
 
             // RETURNING TO VENDOR
             
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            rt_items.ReturnToVendor(Order_ID, DateTime.Now, PONumber, user, warehouse, Item_ID, Cost, Currency, count_return_qty,Details_Id);
+            
+            rt_items.ReturnToVendor(Order_ID, DateTime.Now, PONumber, BaseUserName, BaseWarehouse, Item_ID, Cost, Currency, count_return_qty,Details_Id);
 
             TempData["ConfirmationMessage"] = "Success:Item is Returned To Vendor";
             return Redirect("Return_To_Vendor");

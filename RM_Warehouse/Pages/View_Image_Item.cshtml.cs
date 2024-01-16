@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR VIEWING IMAGE/PDF FILES IN NEW BROWSER TAB.
-    public class View_Image_ItemModel : PageModel
+    public class View_Image_ItemModel : BasePageModel
     {
 
         public readonly IConfiguration _configuration;

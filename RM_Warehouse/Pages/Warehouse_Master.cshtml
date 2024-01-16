@@ -151,12 +151,24 @@
                         <option value=true>True</option>
                     </select>
                 </div>
-                
-           
+
             </div>
             <div class="row">
                 <div class="col-4 col-md-2"><label for="default_receiving_location_id">Default Receiving Location ID</label></div>
                 <div class="col-8 col-md-4"><input type="text" asp-for="@Model.default_receiving_location_id" onkeypress="return event.keyCode != 13;" /></div>
+            </div>
+            <div class="row">
+                <div class="col-4 col-md-2"><label for="is_active">Is Markup</label></div>
+                <div class="col-8 col-md-4">
+                    <select asp-for="@Model.IsMarkup">
+                        <option value=false>False</option>
+                        <option value=true>True</option>
+                    </select>
+                </div>
+                
+                    <div class="col-4 col-md-2 clsdiv" style="display:none"><label for="email">Markup Per</label></div>
+                    <div class="col-8 col-md-4 clsdiv" style="display:none"><input type="text" asp-for="@Model.MarkupPer" onkeypress="return event.keyCode != 13;" /></div>
+                
             </div>
             <div class="row">
                 <div class="col-2 col-md-1">
@@ -184,3 +196,21 @@
     }
 </body>
 </html>
+<script>
+    $(document).ready(function () {
+        if ($("#IsMarkup").val() == "true") {
+            $(".clsdiv").show();
+        } else {
+            $(".clsdiv").hide();
+        }
+        $("#IsMarkup").change(function(){
+
+            console.log($(this).val())
+            if ($(this).val() == "true") {
+                $(".clsdiv").show();
+            } else {
+                $(".clsdiv").hide();
+            }
+        })
+    })
+</script>

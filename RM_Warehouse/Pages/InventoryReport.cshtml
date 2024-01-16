@@ -1,0 +1,61 @@
+﻿@page
+@model RM_Warehouse.Pages.InventoryReportModel
+@{
+}
+@using System.Data;
+<form method="post">
+    
+    <br />
+    <span style="color:red;">@Model.Msg_Search</span>
+    <br />
+    <h4>PICK LOGS</h4>
+
+    @*BELOW FORM FIELDS ARE FOR SERACHING PICK LOGS FROM DATABASE*@
+
+    <div class="row">
+        <div class="col-4 col-md-2"><label for="Warehouse">Select Warehouse:</label></div>
+        <div class="col-8 col-md-3">
+           
+            <select class="box_size" asp-for="@Model.WarehouseId" asp-items="@(new SelectList(InventoryReportModel.warehouseList, "Warehouse_ID", "Warehouse"))">
+                <option value="">PICK ONE</option>
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-4 col-md-2"><label for="From_Date">Date:</label></div>
+        <div class="col-8 col-md-3"><input asp-for="@Model.SearchDate" type="datetime-local" value="@Model.SearchDate.ToString("yyyy-MM-ddTHH:mm:ss")" onkeypress="return event.keyCode != 13;" /></div>
+        </div>
+    <div class="row">
+        <div class="col-4 col-md-2"><label for="Serach_Item">Search Item:</label></div>
+        <div class="col-8 col-md-3"><input asp-for="@Model.Search_Criteria" type="text" onkeypress="return event.keyCode != 13;" /></div>
+    </div>
+    <div class="row">
+        
+        <div class="col-3 col-md-1">
+            <button  id="btnSearch" type="button"> 
+                <i class="fas fa-search" style="color:blue;" title="SEARCH LOGS"></i>
+            </button>
+        </div>
+    </div>    
+</form>
+
+        <script>
+            $(document).ready(function () {
+                $("#btnSearch").click(function () {
+          
+            var SearchDate = $("#SearchDate").val();
+            var WarehouseId = $("#WarehouseId").val();
+
+            var SearchCriteria = $("#Search_Criteria").val();
+           
+            var ReportURL = '@ViewData["ReportURL"]';
+            var strWinFeature = "menubar=no,toolbar=no,location=no,resizable=yes,scrollbars=yes,width=800 ,height=850,status=no,left=60,top=50"
+
+            var strPopupURL = ReportURL + "/Report/InventoryReport?searchDate=" + SearchDate + "&searchCriteria=" + SearchCriteria + "&warehouseId=" + WarehouseId;
+
+            winNew = window.open(strPopupURL, "_blank", strWinFeature)
+            return false;
+                });
+            })
+
+        </script>
