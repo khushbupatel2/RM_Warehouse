@@ -10,8 +10,8 @@ using System.Reflection.Emit;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR NOTES PAGE
-    public class NotesModel : PageModel
-    {
+    public class NotesModel : BasePageModel
+    {                                                   
         [BindProperty]
         public static string Note_Description_Complete { get; set; }
         [BindProperty]
@@ -39,12 +39,7 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+         
 
             Notes notes = new Notes();
             DT = notes.GetNotes();
@@ -65,11 +60,10 @@ namespace RM_Warehouse.Pages
             }
             Notes notes=new Notes();
 
-            string note_by = HttpContext.Session.GetString("username");
-
+            
             if (Note_ID==0)
             {
-                notes.AddNote(Note_Description, note_by);
+                notes.AddNote(Note_Description, BaseUserName);
             }           
             else
             {
@@ -149,9 +143,8 @@ namespace RM_Warehouse.Pages
             }
             Notes notes = new Notes();
 
-            string complete_by = HttpContext.Session.GetString("username");
-
-            notes.CompleteNote(Note_ID_Complete,Complete_Comments,complete_by);
+            
+            notes.CompleteNote(Note_ID_Complete,Complete_Comments,BaseUserName);
 
             TempData["ConfirmationMessage"] = "Note ID:" + Note_ID_Complete + " is Completed";
 

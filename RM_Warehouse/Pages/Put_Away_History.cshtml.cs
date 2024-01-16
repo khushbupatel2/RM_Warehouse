@@ -8,7 +8,7 @@ namespace RM_Warehouse.Pages
 {
 
     // THIS CLASS IS FOR REPORTS -> PUT AWAY HISTORY PAGE.
-    public class Put_Away_HistoryModel : PageModel
+    public class Put_Away_HistoryModel : BasePageModel
     {
         [BindProperty]
         public DateTime From_Date { get; set; }
@@ -24,12 +24,7 @@ namespace RM_Warehouse.Pages
         public static DataTable? dt_put_away_logs { get; set; }
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+            
             dt_put_away_logs = null;
 
             DateTime dt = DateTime.Now.AddMonths(-1);
@@ -49,8 +44,8 @@ namespace RM_Warehouse.Pages
         {
             Put_Away pa = new Put_Away();
 
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_put_away_logs = pa.All_Put_Away_Logs(warehouse);
+			
+			dt_put_away_logs = pa.All_Put_Away_Logs(BaseWarehouse);
 
      //       int count = dt_put_away_logs.Rows.Count;
 
@@ -91,8 +86,8 @@ namespace RM_Warehouse.Pages
             }
 
             Put_Away pa=new Put_Away();
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_put_away_logs = pa.Search(warehouse,Search_Criteria, Search_Value,From_Date,To_Date);
+			
+			dt_put_away_logs = pa.Search(BaseWarehouse,Search_Criteria, Search_Value,From_Date,To_Date);
 
             return Page();
         }

@@ -13,7 +13,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS FOR LOCATION MASTER PAGE.
 
-    public class Location_MasterModel : PageModel
+    public class Location_MasterModel : BasePageModel
     {
         [BindProperty]
         public static DataTable? locations { get; set; }
@@ -52,14 +52,7 @@ namespace RM_Warehouse.Pages
         public static DataTable? dt_items_all { get; set; }
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-
-        
+           
             OnGetShow_Locations();
             Fill_LocationsList();
 
@@ -71,9 +64,8 @@ namespace RM_Warehouse.Pages
         public void OnGetShow_Locations()
         {
             Inhand_Inventory in_inv = new Inhand_Inventory();
-            warehouse_name = HttpContext.Session.GetString("warehouse");
-
-			dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(warehouse_name);
+          
+			dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(BaseWarehouse);
            
             flag_locations = true;
 
@@ -152,25 +144,23 @@ namespace RM_Warehouse.Pages
             if (!Check_Input())
                 return Page();
 
-            string current_user = HttpContext.Session.GetString("username");
-			string current_warehouse = HttpContext.Session.GetString("warehouse");
-            
+          
             Warehouse wh=new Warehouse();
-            int current_warehouse_id = wh.GetWarehouse_ID(current_warehouse);
+            int current_warehouse_id = wh.GetWarehouse_ID(BaseWarehouse);
 
 			Inhand_Inventory in_inv = new Inhand_Inventory();
 
             if (location_id_edit != 0)
-                in_inv.Update_Location(location_id_edit, location_code, current_warehouse_id, current_user.ToUpper(), System.DateTime.Now);
+                in_inv.Update_Location(location_id_edit, location_code, current_warehouse_id, BaseUserName.ToUpper(), System.DateTime.Now);
             else
             {
-                location_id_edit=in_inv.Insert_Location(location_code, current_warehouse_id, current_user.ToUpper(), System.DateTime.Now);
+                location_id_edit=in_inv.Insert_Location(location_code, current_warehouse_id, BaseUserName.ToUpper(), System.DateTime.Now);
             }
             // If Set As Default Location CHECBOX is CHECKED
 
             if(Is_Default_Location)
             {
-                wh.Change_Default_Location(current_warehouse, location_id_edit);
+                wh.Change_Default_Location(BaseWarehouse, location_id_edit);
             }
 
             OnGetShow_Locations();
@@ -208,9 +198,8 @@ namespace RM_Warehouse.Pages
         public void Fill_LocationsList()
         {
             Inhand_Inventory inhand_Inventory=new Inhand_Inventory();
-            warehouse_name = HttpContext.Session.GetString("warehouse");
-
-            locations = inhand_Inventory.GetAll_Locations_for_Warehouse(warehouse_name);
+           
+            locations = inhand_Inventory.GetAll_Locations_for_Warehouse(BaseWarehouse);
             locationList = new List<Location_Codes>();
             if (locations == null)
                 return;

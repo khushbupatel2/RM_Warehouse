@@ -8,7 +8,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS FOR VENDOR MASTER PAGE.
 
-    public class Vendor_IndexModel : PageModel
+    public class Vendor_IndexModel : BasePageModel
     {
         [BindProperty]
         public string Notes { get; set; }
@@ -68,13 +68,7 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-
+            
             Vendor vendor = new Vendor();
             DT = vendor.GetAll();
 

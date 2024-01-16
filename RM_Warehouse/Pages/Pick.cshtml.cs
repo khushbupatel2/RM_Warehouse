@@ -11,7 +11,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS FOR ORDER MANAGEMENT -> OUTBOUND ORDER -> PICK PAGE
 
-    public class PickModel : PageModel
+    public class PickModel : BasePageModel
     {
         [BindProperty]
         public static string item_desc { get; set; }
@@ -78,16 +78,20 @@ namespace RM_Warehouse.Pages
         [BindProperty]
 
         public static long Order_ID { get; set; }
-        
+
+        [BindProperty]
+        public string Search_PONumber { get; set; }
+
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-            Fill_Orders();
+            
+            Fill_Orders(Search_PONumber);
+            return Page();
+        }
+        public IActionResult OnPostOrderList()
+        {
+            Fill_Orders(Search_PONumber);
+           
             return Page();
         }
 
@@ -114,18 +118,18 @@ namespace RM_Warehouse.Pages
             flag_orders = true;
 
             Reset_Pick_Form();
-            Fill_Orders();
+            Fill_Orders(Search_PONumber);
             return Page();
         }
 
         // THIS FUNCTION POPULTES OUTBOUND ORDERS GRID WITH ORDER STAUS='OPEN'.
         // NESTED ITEMS DETAILS ARE WITH IS_RECEIVED=false FIELD.
 
-        public void Fill_Orders()
+        public void Fill_Orders(string PONumber)
         {
             Order_Outbound order = new Order_Outbound();
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_orders = order.GetOrders(warehouse);
+			
+			dt_orders = order.GetOrders(PONumber, BaseWarehouse);
 
             nested_tables = new DataSet();
             if (dt_orders == null)
@@ -186,10 +190,10 @@ namespace RM_Warehouse.Pages
             }
 
             
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            quantity_available=pick.ItemsAvailable(item_id, warehouse);
+            
+            quantity_available=pick.ItemsAvailable(item_id, BaseWarehouse);
 
-            dt_locations = pick.Get_Available_Items_and_Locations(Order_ID, item_id, warehouse);
+            dt_locations = pick.Get_Available_Items_and_Locations(Order_ID, item_id, BaseWarehouse);
 
             flag_pick_form = true;
             flag_locations = true;
@@ -203,8 +207,7 @@ namespace RM_Warehouse.Pages
 
         public IActionResult OnPostPickOrder(IFormCollection form)
         {
-            string user = HttpContext.Session.GetString("username");
-
+            
   //          
             string temp_inv_id = form["Inv_Id"];
             string[] temp_inv_ids = temp_inv_id.Split(',');
@@ -277,7 +280,7 @@ namespace RM_Warehouse.Pages
                 else
                     var_expiry_date = null;
 
-                pick.RemoveInventory(item, var_details_id, var_location_id, var_item_id, var_pick_qty, var_expiry_date, user);
+                pick.RemoveInventory(item, var_details_id, var_location_id, var_item_id, var_pick_qty, var_expiry_date, BaseUserName);
             }
             Order_Outbound order = new Order_Outbound();
             dt_items = order.GetItems(Order_ID);

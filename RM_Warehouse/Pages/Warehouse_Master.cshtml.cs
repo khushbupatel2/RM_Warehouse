@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR WAREHOUSE MANAGEMENT -> WAREHOUSE MASTER PAGE.
-    public class Warehouse_MasterModel : PageModel
+    public class Warehouse_MasterModel : BasePageModel
     {
         [BindProperty]
         public string po_abbrivation { get; set; }
@@ -66,16 +66,16 @@ namespace RM_Warehouse.Pages
         [BindProperty]
 
         public int default_receiving_location_id { get; set; }
+        [BindProperty]
+        public bool IsMarkup { get; set; }
+        [BindProperty]
+
+        public decimal MarkupPer { get; set; }
 
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+           
 
             Label = "Create New Warehouse";
             Fill_Warehouse();
@@ -100,15 +100,20 @@ namespace RM_Warehouse.Pages
             if (!Check_Input())
                 return Page();
 
+            if (IsMarkup == false)
+            {
+                MarkupPer = 0;
+            }
+
             Warehouse wh = new Warehouse();
 
             if (Label == "Create New Warehouse")
             {
-                wh.CreateRecord(name, address1, address2, city, state_province, postal_code, country, email, fax, is_active, default_receiving_location_id, phone,po_abbrivation);
+                wh.CreateRecord(name, address1, address2, city, state_province, postal_code, country, email, fax, is_active, default_receiving_location_id, phone,po_abbrivation,IsMarkup,MarkupPer);
             }
             else
             {
-                wh.UpdateRecord(warehouse_id, name, address1, address2, city, state_province, postal_code, country, email, fax, is_active, default_receiving_location_id, phone, po_abbrivation);
+                wh.UpdateRecord(warehouse_id, name, address1, address2, city, state_province, postal_code, country, email, fax, is_active, default_receiving_location_id, phone, po_abbrivation, IsMarkup, MarkupPer);
             }
 
 
@@ -129,6 +134,14 @@ namespace RM_Warehouse.Pages
         public bool Check_Input()
         {
             flag_entry_form = true;
+            if (IsMarkup == true)
+            {
+                if (MarkupPer == 0)
+                {
+                    Msg = "Please Markup Percentage";
+                    return false;
+                }
+            }
             if (string.IsNullOrEmpty(name))
             {
                 Msg = "Please enter Warehouse Name.";
@@ -176,6 +189,14 @@ namespace RM_Warehouse.Pages
                 Msg = "Please enter PO Abbrivation.";
                 return false;
             }
+            if(IsMarkup==true)
+            {
+                if(MarkupPer==0)
+                {
+                    Msg = "Please Markup Percentage";
+                    return false;
+                }
+            }
 
             return true;
         }
@@ -202,6 +223,9 @@ namespace RM_Warehouse.Pages
             phone = dr_by_warehouse_id["Phone"].ToString();
             fax = dr_by_warehouse_id["Fax"].ToString();
             is_active = Convert.ToBoolean(dr_by_warehouse_id["Is_Active"]);
+            IsMarkup = Convert.ToBoolean(dr_by_warehouse_id["IsMarkup"]);
+            MarkupPer = Convert.ToDecimal(dr_by_warehouse_id["MarkupPer"]);
+
             if (dr_by_warehouse_id["Default_Receiving_Location_Id"] != DBNull.Value)
                 default_receiving_location_id = Convert.ToInt32(dr_by_warehouse_id["Default_Receiving_Location_Id"]);
             else

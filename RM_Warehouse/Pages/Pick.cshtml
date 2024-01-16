@@ -42,6 +42,16 @@
     ALSO,NESTED TABLE HAS ITEMS DETAILS WITH IS_RECEIVED = false.
     IT HAS PickItem BUTTON FOR EACH ORDER DEATILS.
     *@
+       
+            <b>Search Po number:</b>
+
+            <input type="text" asp-for="Search_PONumber" />
+            <button asp-page-handler="OrderList" onclick="spinner();">
+                Search
+            </button>
+            <a href="Pick" onclick="spinner();">Show All Orders.</a>
+
+        
 
     @if (PickModel.dt_orders != null)
     {

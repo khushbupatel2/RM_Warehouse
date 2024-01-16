@@ -41,7 +41,16 @@
         ALSO,IT HAS CHECKBOX TO SELECT A DETAILS ROW.ONLY CHECKED ROWS WILL BE PROCESSED.
         ON BOTTOM OF NESTED DETAILS GRID,RECEIVE ORDER BUTTON IS PRESENT FOR SUBMIT ACTION.
     *@
+    <form method="post">
+        <b>Search Po number:</b>
 
+        <input type="text" asp-for="Search_PONumber" />
+        <button asp-page-handler="OrderList" onclick="spinner();">
+            Search
+        </button>
+        <a href="Receive_Order" onclick="spinner();">Show All Orders.</a>
+
+    </form>
 
     @if (Receive_OrderModel.dt_orders != null)
     {

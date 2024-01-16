@@ -9,7 +9,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS FOR ORDER MANAGEMENT -> INBOUND ORDER -> RECEIVE ORDER
 
-    public class Receive_OrderModel : PageModel
+    public class Receive_OrderModel : BasePageModel
     {
         [BindProperty]
         public int Id { get; set; }
@@ -43,27 +43,29 @@ namespace RM_Warehouse.Pages
         public static DataTable? dt_orders { get; set; }
 
         public DataTable? dt_items { get;set; }
+        [BindProperty]
+        public string Search_PONumber { get; set; }
 
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-            Fill_Orders();
+           
+            Fill_Orders("");
             
             return Page();
         }
-
+        public IActionResult OnPostOrderList()
+        {
+            Fill_Orders(Search_PONumber);
+           
+            return Page();
+        }
         // THIS FUNCTION POPULTAES NESTED DATATABLES WITH INBOUND CREATED ORDERS.ALL DETAILS ITEMS ARE NOT RECIEVED.
 
-        public void Fill_Orders()
+        public void Fill_Orders(string ponumber)
         {
             Order_Inbound order = new Order_Inbound();
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			dt_orders = order.GetOrders(warehouse);
+			
+			dt_orders = order.GetOrders(BaseWarehouse, ponumber);
 
             nested_tables = new DataSet();
             if (dt_orders == null)
@@ -92,8 +94,7 @@ namespace RM_Warehouse.Pages
 
         public IActionResult OnPostReceiveOrder(long order_id_1,IFormCollection form)
         {
-            string user = HttpContext.Session.GetString("username");
-
+            
             Order_Inbound order = new Order_Inbound();
             string temp_id = form["Id"];
             string[] temp_ids = temp_id.Split(',');
@@ -116,7 +117,7 @@ namespace RM_Warehouse.Pages
                     var_expiry_date = null;
                 else
                     var_expiry_date = Convert.ToDateTime(form["Expiry_Date"][index]);
-                order.UpdateReceivedItem(order_id_1, item, var_rec_qty, user, var_rec_date, var_expiry_date);
+                order.UpdateReceivedItem(order_id_1, item, var_rec_qty, BaseWarehouse, var_rec_date, var_expiry_date);
                
             }
 

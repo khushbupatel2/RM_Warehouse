@@ -8,9 +8,28 @@ using DAL.CRUD;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace RM_Warehouse.Pages
 {
+    public class LoginModelData
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+        public string Warehouse { get; set; }
+
+    }
+    public struct TKey
+    {
+        public const string Key = "dIXCO7J36ge0XBCMKDB0HwI8u8Vuc6A7GkQZIHFx";
+
+    }
     // THIS CLASS IS FOR LOGIN PAGE
     public class IndexModel : PageModel
     {
@@ -43,6 +62,7 @@ namespace RM_Warehouse.Pages
         public static bool flag_Admin_Warehouse { get; set; }
         public static bool flag_Admin_Pages { get; set; }
 
+        public static bool flag_ZeroInventoryReport { get; set; }
         // User Menu FLAGS ends here
 
         [BindProperty]
@@ -53,7 +73,8 @@ namespace RM_Warehouse.Pages
         public static List<Warehouse_Names_Only> warehouseList { get; set; }
 
         private readonly ILogger<IndexModel> _logger;
-        
+        public readonly IConfiguration _configuration;
+
         [BindProperty]
         public string Username { get; set; }
 
@@ -62,12 +83,13 @@ namespace RM_Warehouse.Pages
 
         public string Msg { get; set; }
 
-        public IndexModel(ILogger<IndexModel> logger)
+        public IndexModel(ILogger<IndexModel> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _configuration = configuration;
         }
-
-
+      
+       
         public void OnGet()
         {
             FillWarehouseList();
@@ -134,7 +156,7 @@ namespace RM_Warehouse.Pages
                         }
                         updateMenuFlags();
 
-                        HttpContext.Session.SetString("warehouse", warehouse_name);
+                       // HttpContext.Session.SetString("warehouse", warehouse_name);
                         foreach (string GroupPath in result.Properties["memberOf"])
                         {
                             if (GroupPath.Contains("RM_MECHANIC")) //if (GroupPath.Contains("RM RECORD"))
@@ -145,21 +167,34 @@ namespace RM_Warehouse.Pages
                                     HttpContext.Session.SetString("login_user_email", result.Properties["mail"][0].ToString());
                                 }
                                 
-                                HttpContext.Session.SetString("password", EncryptDecrypt.Encrypt(Password));
-                                HttpContext.Session.SetString("Is_Mechanic", "yes");
+                               // HttpContext.Session.SetString("password", EncryptDecrypt.Encrypt(Password));
+                                //HttpContext.Session.SetString("Is_Mechanic", "yes");
+                               
+                               
                                 authorized = true;
                                 Msg = "Success";
                                 return RedirectToPage("Welcome");
                             }
                             if (GroupPath.Contains("RM RECORD")) //if (GroupPath.Contains("RM RECORD"))
                             {
-                                HttpContext.Session.SetString("username", Username);
-                                if (result.Properties["mail"][0] != null)
+                                //HttpContext.Session.SetString("username", Username);
+                                //if (result.Properties["mail"][0] != null)
+                                //{
+                                //    HttpContext.Session.SetString("login_user_email", result.Properties["mail"][0].ToString());
+                                //}
+                                //HttpContext.Session.SetString("password", EncryptDecrypt.Encrypt(Password));
+                                //HttpContext.Session.SetString("Is_Mechanic", "no");
+                                LoginModelData loginModelData = new LoginModelData();
+                                loginModelData.Username = Username;
+                                loginModelData.Password = Password;
+                                loginModelData.Role = warehouse_name;
+                                loginModelData.Email = result.Properties["mail"][0].ToString();
+                                var token = Generate(loginModelData);
+                                if (token != null)
                                 {
-                                    HttpContext.Session.SetString("login_user_email", result.Properties["mail"][0].ToString());
+                                    //Save token in session object
+                                    HttpContext.Session.SetString("JWToken", token);
                                 }
-                                HttpContext.Session.SetString("password", EncryptDecrypt.Encrypt(Password));
-                                HttpContext.Session.SetString("Is_Mechanic", "no");
                                 authorized = true;
                                 Msg = "Success";
                                 return RedirectToPage("Welcome");
@@ -182,6 +217,25 @@ namespace RM_Warehouse.Pages
             }
 #pragma warning restore CA1416 // Validate platform compatibility
             return Page();
+        }
+        private string Generate(LoginModelData LM)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TKey.Key));
+            var credential = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier,EncryptDecrypt.Encrypt(LM.Username)),
+                new Claim(ClaimTypes.Role,LM.Role),
+                // new Claim(ClaimTypes.Email,EncryptDecrypt.Encrypt(LM.Email)),
+                 new Claim(ClaimTypes.Anonymous,EncryptDecrypt.Encrypt(LM.Password))
+            };
+            var time = _configuration.GetValue<int>("JWTTime");
+            var token = new JwtSecurityToken(_configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: DateTime.Now.AddHours(time),
+                signingCredentials: credential);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
         // THIS FUNCTION SHOWS ALL WAREHOUSE NAMES PRESENT IN OUR DATABASE
         public void FillWarehouseList()
@@ -209,7 +263,7 @@ namespace RM_Warehouse.Pages
 
 			flag_Return_From_Garage = up.IsValidPage("Return_From_Garage", Username);
 			flag_Return_To_Vendor = up.IsValidPage("Return_To_Vendor", Username);
-			flag_0_Inventory = up.IsValidPage("0_Inventory", Username);
+			flag_0_Inventory = up.IsValidPage("InventoryReport", Username);
             flag_Move_Inventory= up.IsValidPage("Move_Inventory", Username);
             flag_PO_Invoice_Process = up.IsValidPage("PO_INVOICE_PROCESS", Username);
             flag_Notes= up.IsValidPage("Notes", Username);
@@ -228,6 +282,7 @@ namespace RM_Warehouse.Pages
             flag_Pick_History = up.IsValidPage("Pick_History", Username);
             flag_Admin_Warehouse = up.IsValidPage("Admin_Warehouse", Username);
             flag_Admin_Pages = up.IsValidPage("Admin_Pages", Username);
+            flag_ZeroInventoryReport= up.IsValidPage("ZeroInventoryReport", Username);
 
 
         }

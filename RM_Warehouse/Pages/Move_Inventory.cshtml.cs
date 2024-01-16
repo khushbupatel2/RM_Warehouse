@@ -10,7 +10,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS FOR MOVE INVENTORY PAGE.
 
-    public class Move_InventoryModel : PageModel
+    public class Move_InventoryModel : BasePageModel
     {
         [BindProperty]
         public static int prev_location_id { get; set; }
@@ -63,14 +63,7 @@ namespace RM_Warehouse.Pages
         
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-
-            
+           
             OnGetShow_Locations();
             Fill_Locations();
             flag_search = true;
@@ -82,9 +75,8 @@ namespace RM_Warehouse.Pages
         public void OnGetShow_Locations()
         {
             Inhand_Inventory in_inv = new Inhand_Inventory();
-            warehouse_name = HttpContext.Session.GetString("warehouse");
-
-            dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(warehouse_name);
+         
+            dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(BaseWarehouse);
 
             flag_locations = true;
             flag_search = true;
@@ -142,9 +134,9 @@ namespace RM_Warehouse.Pages
 
         public void Fill_Locations()
         {
-            string warehouse = HttpContext.Session.GetString("warehouse");
+           
             Inhand_Inventory in_inv = new Inhand_Inventory();
-            dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(warehouse);
+            dt_loc_all_for_wh = in_inv.GetAll_Locations_for_Warehouse(BaseWarehouse);
 
             // creating location list and populating it with datatable dt.
 
@@ -189,8 +181,7 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
 
-            string user = HttpContext.Session.GetString("username");
-
+            
             Inhand_Inventory inv_in = new Inhand_Inventory();
 
             inv_in.Move_Inventory(prev_location_id,location_id_form, item_id, quantity_placed, expiry_date);

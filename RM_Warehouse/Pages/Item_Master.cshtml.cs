@@ -12,7 +12,7 @@ using System.Reflection;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR ITEM MASTER PAGE.
-    public class Item_MasterModel : PageModel
+    public class Item_MasterModel : BasePageModel
     {
         [BindProperty]
         public static int item_id_upload { get; set; }  
@@ -66,6 +66,8 @@ namespace RM_Warehouse.Pages
         [BindProperty]
         public bool flag_entry_form { get; set; }
         [BindProperty]
+        public bool flag_error_form { get; set; }
+        [BindProperty]
         public string Label { get; set; }
         public string Msg { get; set; }
 
@@ -117,13 +119,7 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
-
+           
             Label = "Create New Item";
             Fill_Items();
             //Fill_ItemList();
@@ -136,11 +132,10 @@ namespace RM_Warehouse.Pages
         public void Fill_Items()
         {
 
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+          
             Item item = new Item();
-            dt_items_all = item.GetAllItems(warehouse);
-            dt_items_count = item.GetAllCount(warehouse);
+            dt_items_all = item.GetAllItems(BaseWarehouse);
+            dt_items_count = item.GetAllCount(BaseWarehouse);
             cnt = (int)dt_items_count.Rows[0][0];
         }
 
@@ -151,18 +146,28 @@ namespace RM_Warehouse.Pages
             if (!Check_Input())
                 return Page();
 
-            string user = HttpContext.Session.GetString("username");
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+            
             Item item = new Item();
 
             if (Label == "Create New Item")
             {
-                item.CreateRecord(item_code, item_desc,price, Currency, user.ToUpper(), DateTime.Now,warehouse);
+               DataRow DT= item.Get_By_Item_ItemCode(item_code, BaseWarehouse);
+                int cnt = Convert.ToInt16(DT["cnt"]);
+                if (cnt == 0)
+                {
+                    item.CreateRecord(item_code, item_desc, price, Currency, BaseUserName.ToUpper(), DateTime.Now, BaseWarehouse);
+                }
+                else
+                {
+                    flag_entry_form = true;
+                    Msg = "Item Code Already Exist";
+                    return Page();
+                }
+                   
             }
             else
             {
-                item.UpdateRecord(item_id, item_code, item_desc, user.ToUpper(), DateTime.Now,warehouse);
+                item.UpdateRecord(item_id, item_code, item_desc, BaseUserName.ToUpper(), DateTime.Now,BaseWarehouse);
             }
 
 
@@ -262,9 +267,9 @@ namespace RM_Warehouse.Pages
             item_code_locations = item_code_1;
             item_desc_locations= item_desc_1;
                         
-            string warehouse = HttpContext.Session.GetString("warehouse");
+           
             Item item = new Item();
-            dt_locations = item.Get_Available_Items_and_Locations(item_id_1, warehouse);
+            dt_locations = item.Get_Available_Items_and_Locations(item_id_1, BaseWarehouse);
             flag_locations = true;
             flag_search = false;
 
@@ -305,11 +310,10 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
                         
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+           
 
             Item item = new Item();
-            dt_locations = item.Get_Available_Items_and_Locations(item_id_search, warehouse);
+            dt_locations = item.Get_Available_Items_and_Locations(item_id_search, BaseWarehouse);
 
             DataRow item_by_id = item.Get_By_Item_ID(item_id_search);
 
@@ -357,10 +361,9 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
 
-            string user = HttpContext.Session.GetString("username");
-
+           
             Item item = new Item();
-            item.UpdatePriceOfItem(item_id_price, item_price_old, item_currency_old, item_price_new, item_currency_new, user);
+            item.UpdatePriceOfItem(item_id_price, item_price_old, item_currency_old, item_price_new, item_currency_new, BaseUserName);
             
             return Redirect("Item_Master");
         }
@@ -464,10 +467,9 @@ namespace RM_Warehouse.Pages
         public async Task<JsonResult> OnGetItemList(string searchTerm)
         {
             Item item = new Item();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
+           
             List<Item_Codes_Description> ListLocations = new List<Item_Codes_Description>();
-            items = item.GetAllItem(warehouse,searchTerm);
+            items = item.GetAllItem(BaseWarehouse,searchTerm);
             if (items != null)
             {
                 ListLocations = ConvertDataTable<Item_Codes_Description>(items);

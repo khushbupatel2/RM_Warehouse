@@ -12,7 +12,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS FOR PO INVOICE PROCESS PAGE.
 
-    public class PO_INVOICE_PROCESSModel : PageModel
+    public class PO_INVOICE_PROCESSModel : BasePageModel
     {
         [BindProperty]
         public string Rejection_Uploaded_By { get; set; }
@@ -39,6 +39,7 @@ namespace RM_Warehouse.Pages
         public IFormFile UploadFiles { get; set; }
 
         public bool flag_upload { get; set; }
+        public bool flag_uploadEdit { get; set; }
         public DataTable? dt_items { get; set; }
         public string Msg_Invoice_Errors { get; set; }
         [BindProperty]
@@ -86,12 +87,7 @@ namespace RM_Warehouse.Pages
 
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+           
             Fill_Orders();
             Fill_Orders_tab2();
             Fill_Orders_tab3();
@@ -109,8 +105,8 @@ namespace RM_Warehouse.Pages
         public void Fill_Orders()
         {
             PO_Details po = new PO_Details();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            dt_orders = po.GetOrdersWithoutInvoiceUpload(warehouse);
+            
+            dt_orders = po.GetOrdersWithoutInvoiceUpload(BaseWarehouse);
 
             nested_tables = new DataSet();
             if (dt_orders == null)
@@ -147,7 +143,22 @@ namespace RM_Warehouse.Pages
             Upload_Order_ID = order_id_1;
             return Page();
         }
+        public IActionResult OnPostUploadedEdit_Invoice(long order_id_1)
+        {
+            flag_uploadEdit = true;
+            flag_orders_tab2 = false;
+            flag_upload = false;
+           
 
+            PO_Details po = new PO_Details();
+
+            items_table = po.GetItems(order_id_1);
+
+            Upload_Order_ID = order_id_1;
+            return Page();
+        }
+
+        
         // THIS FUNCTION DOES CANCEL FOR INVOICE UPLOAD FORM IN TAB 1.
         public IActionResult OnPostCancel()
         {
@@ -162,8 +173,7 @@ namespace RM_Warehouse.Pages
 
         public async Task<IActionResult> OnPostUploadAsync(IFormCollection form)
         {
-            string user = HttpContext.Session.GetString("username");
-
+          
             string temp_id = form["Id"];
             string[] temp_ids = temp_id.Split(',');
 
@@ -233,7 +243,7 @@ namespace RM_Warehouse.Pages
                 {
                     await UploadFiles.CopyToAsync(fs);
 
-                    po.SavePO(Upload_Order_ID, file_name,user);
+                    po.SavePO(Upload_Order_ID, file_name,BaseUserName);
 
                     TempData["ConfirmationMessage"] = "Invoice for Order_ID:" + Upload_Order_ID + "\\n" + " File: " + UploadFiles.FileName + " Uploaded Successfully.";
 
@@ -248,6 +258,113 @@ namespace RM_Warehouse.Pages
             return Page();
         }
 
+        //upload Edit
+        public async Task<IActionResult> OnPostUploadEditAsync(IFormCollection form)
+        {
+
+
+            string temp_id = form["Id"];
+            string[] temp_ids = temp_id.Split(',');
+
+            PO_Details po = new PO_Details();
+
+            if (UploadFiles == null)
+            {
+                File_Empty_Msg = "Please select File.";
+                flag_upload = true;
+
+                return Page();
+            }
+            if (!CheckFileType(UploadFiles.FileName))
+            {
+                File_Empty_Msg = "Not valid type.Please select .pdf file.";
+                flag_upload = true;
+
+                return Page();
+            }
+
+            // PO COST CURRENCY
+
+            foreach (DataRow row in items_table.Rows)
+            {
+                int index = Array.IndexOf(temp_ids, row["ID"].ToString());
+
+                decimal var_cost = Convert.ToDecimal(form["Cost"][index]);
+                string var_currency = form["Currency"][index].ToString();
+
+                if (var_cost == 0)
+                {
+                    Msg_Invoice_Errors = "Please Give Cost of Item.";
+                    flag_upload = true;
+                    return Page();
+                }
+                if (var_currency == "0")
+                {
+                    Msg_Invoice_Errors = "Please Select Currency of Item.";
+                    flag_upload = true;
+                    return Page();
+                }
+
+            }
+
+            // UPDATE SQL TABLES
+
+            foreach (DataRow row in items_table.Rows)
+            {
+                int index = Array.IndexOf(temp_ids, row["ID"].ToString());
+
+                decimal var_cost = Convert.ToDecimal(form["Cost"][index]);
+                string var_currency = form["Currency"][index].ToString();
+
+                po.UpdateCostOfItem(Convert.ToInt64(row["ID"]), var_cost, var_currency);
+            }
+
+
+
+            dt_items = po.GetRemainingItems(Upload_Order_ID);
+            PO_Details pos = new PO_Details();
+
+            DataTable items_tables = po.GetOrdersWithInvoiceUploadFRomOrderId(BaseWarehouse,Upload_Order_ID);
+            string oldfile_name="";
+            foreach (DataRow row in items_tables.Rows)
+            {
+                oldfile_name = (string)row["INVOICE_FILENAME"];
+            }
+            if (dt_items == null) // PO done for All items in order,so order is Invoice Uploaded.
+            {
+                var guid = Guid.NewGuid().ToString();
+                var file_name = guid + "__" + UploadFiles.FileName;
+                string folder_path = _configuration.GetValue<string>("Upload_Folder_Path_Fixed");
+                if(oldfile_name!=null && oldfile_name != "")
+                {
+                    var file_path_old = Path.Combine(folder_path, oldfile_name);
+                    if (System.IO.File.Exists(file_path_old))
+                    {
+                        System.IO.File.Delete(file_path_old);
+                        
+                    }
+                }
+               
+                var file_path_upload = Path.Combine(folder_path, file_name);
+                 
+                using (var fs = new FileStream(file_path_upload, FileMode.Create))
+                {
+                    await UploadFiles.CopyToAsync(fs);
+
+                    po.SavePO(Upload_Order_ID, file_name, BaseUserName);
+
+                    TempData["ConfirmationMessage"] = "Invoice for Order_ID:" + Upload_Order_ID + "\\n" + " File: " + UploadFiles.FileName + " Uploaded Successfully.";
+
+                    ModelState.Clear();
+                    flag_upload = false;
+                }
+
+                return Redirect("PO_INVOICE_PROCESS");
+            }
+            flag_upload = true;
+
+            return Page();
+        }
         // THIS FUNCTION CHECKS EXTENSION OF FILE UPLOADED.ONLY .pdf FILES ARE VALID.
 
         bool CheckFileType(string file_name)
@@ -266,8 +383,8 @@ namespace RM_Warehouse.Pages
         public void Fill_Orders_tab2()
         {
             PO_Details po = new PO_Details();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            dt_orders_tab2 = po.GetOrdersWithInvoiceUpload(warehouse);
+           
+            dt_orders_tab2 = po.GetOrdersWithInvoiceUpload(BaseWarehouse);
 
             nested_tables_tab2 = new DataSet();
             if (dt_orders_tab2 == null)
@@ -294,8 +411,8 @@ namespace RM_Warehouse.Pages
         public void Fill_Orders_tab3()
         {
             PO_Details po = new PO_Details();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            dt_orders_tab3 = po.GetOrdersWithInvoiceUpload(warehouse);
+          
+            dt_orders_tab3 = po.GetOrdersWithInvoiceUpload(BaseWarehouse);
 
             nested_tables_tab3 = new DataSet();
             if (dt_orders_tab3 == null)
@@ -341,7 +458,7 @@ namespace RM_Warehouse.Pages
             // fetching record from database
 
             string To_Email = _configuration.GetValue<string>("ToAccountsEmailAddress");
-            string From_Email = HttpContext.Session.GetString("login_user_email");
+           
 
             //send email
 
@@ -352,7 +469,7 @@ namespace RM_Warehouse.Pages
             cl.UseDefaultCredentials = false;
             MailMessage msg = new MailMessage();
             msg = new MailMessage();
-            msg.From = new MailAddress(From_Email);
+            msg.From = new MailAddress(BaseEmailId);
             msg.To.Add(To_Email);
             
             msg.Subject = "Invoice Of PoNumber : " + po_number ;
@@ -385,8 +502,8 @@ namespace RM_Warehouse.Pages
         public void Fill_Orders_tab4()
         {
             PO_Details po = new PO_Details();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-            dt_orders_tab4 = po.GetOrdersWithInvoiceUpload(warehouse,true);
+         
+            dt_orders_tab4 = po.GetOrdersWithInvoiceUpload(BaseWarehouse,true);
 
             nested_tables_tab4 = new DataSet();
             if (dt_orders_tab4 == null)
@@ -412,13 +529,13 @@ namespace RM_Warehouse.Pages
 
         private string isADUser(string created_by)
         {
-            string userName = HttpContext.Session.GetString("username");
-            string passWord = EncryptDecrypt.Decrypt(HttpContext.Session.GetString("password"));
+           
+            
 
             List<string> allowedTerminal = new List<string>();
             //bool authorized = false;
-            string domainAdnUserName = @"HEI\" + userName;
-            DirectoryEntry entry = new DirectoryEntry("LDAP://local.hunterexpress.ca", domainAdnUserName, passWord, AuthenticationTypes.None);
+            string domainAdnUserName = @"HEI\" + BaseUserName;
+            DirectoryEntry entry = new DirectoryEntry("LDAP://local.hunterexpress.ca", domainAdnUserName, EncryptDecrypt.Decrypt(BasePassword), AuthenticationTypes.None);
             try
             {
                 //Bind to the native AdsObject to force authentication.			
@@ -464,7 +581,7 @@ namespace RM_Warehouse.Pages
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
             
             string To_Email = isADUser(uploaded_by);
-            string From_Email = HttpContext.Session.GetString("login_user_email");
+         
 
             //_configuration.GetValue<string>("FromAccountsEmailAddress");
 
@@ -477,7 +594,7 @@ namespace RM_Warehouse.Pages
             cl.UseDefaultCredentials = false;
             MailMessage msg = new MailMessage();
             msg = new MailMessage();
-            msg.From = new MailAddress(From_Email);
+            msg.From = new MailAddress(BaseEmailId);
             msg.To.Add(To_Email);
 
             msg.Subject = "Rejection : Invoice Of PoNumber : " + po_number;
@@ -540,7 +657,7 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
 
-            string user = HttpContext.Session.GetString("username");
+            
 
             Send_Rejection_Email(Rejection_Order_ID,Rejection_PONumber,Rejection_Vendor_Name,Rejection_Reason,Rejection_Invoice_Filename, Rejection_Uploaded_By);
 

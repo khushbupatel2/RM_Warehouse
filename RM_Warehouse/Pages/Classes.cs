@@ -15,6 +15,11 @@ namespace RM_Warehouse.Pages
     {
         public string Warehouse { get; set; }
     }
+    public class WarehouseDetails
+    {
+        public int Warehouse_ID { get; set; }
+        public string Warehouse { get; set; }
+    }
     // THIS CLASS IS FOR DROPDOWN(VENDORS) FROM OUR DATABSE TABLE
     public class Vendor_Names
     {

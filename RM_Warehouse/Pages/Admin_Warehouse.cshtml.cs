@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 namespace RM_Warehouse.Pages
 {
     // THIS CLASS IS FOR ADMIN WAREHOUSE - PAGE
-    public class Admin_WarehouseModel : PageModel
+    public class Admin_WarehouseModel : BasePageModel
     {
         [BindProperty]
         public string warehouse_name { get; set; }
@@ -31,12 +31,6 @@ namespace RM_Warehouse.Pages
         public IActionResult OnGet()
         {
 
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
             FillWarehouseList();
             dt_my_warehouses = null;
             return Page();

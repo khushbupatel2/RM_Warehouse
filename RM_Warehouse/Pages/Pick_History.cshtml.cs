@@ -8,7 +8,7 @@ namespace RM_Warehouse.Pages
 {
 
     // THIS CLASS IS FOR REPORTS -> PICK HISTORY PAGE.
-    public class Pick_HistoryModel : PageModel
+    public class Pick_HistoryModel : BasePageModel
     {
         [BindProperty]
         public DateTime From_Date { get; set; }
@@ -24,12 +24,7 @@ namespace RM_Warehouse.Pages
         public static DataTable? dt_pick_logs { get; set; }
         public IActionResult OnGet()
         {
-            bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-            if (flag_username)
-            {
-                return RedirectToPage("Index");
-            }
+            
             dt_pick_logs = null;
 
             DateTime dt = DateTime.Now.AddMonths(-1);
@@ -48,9 +43,8 @@ namespace RM_Warehouse.Pages
         public IActionResult OnPostShow_All_Logs()
         {
             Pick pa = new Pick();
-            string warehouse = HttpContext.Session.GetString("warehouse");
-
-			dt_pick_logs = pa.All_Pick_Logs(warehouse);
+            
+			dt_pick_logs = pa.All_Pick_Logs(BaseWarehouse);
 
             Search_Criteria = null;
             Search_Value = null;
@@ -89,9 +83,9 @@ namespace RM_Warehouse.Pages
                 return Page();
             }
 
-			string warehouse = HttpContext.Session.GetString("warehouse");
+		    
 			Pick pa = new Pick();
-            dt_pick_logs = pa.Search(warehouse,Search_Criteria, Search_Value, From_Date, To_Date);
+            dt_pick_logs = pa.Search(BaseWarehouse,Search_Criteria, Search_Value, From_Date, To_Date);
 
             return Page();
         }

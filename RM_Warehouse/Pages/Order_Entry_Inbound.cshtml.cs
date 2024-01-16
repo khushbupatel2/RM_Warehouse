@@ -10,7 +10,7 @@ namespace RM_Warehouse.Pages
 
     // THIS CLASS IS USED FOR ORDER MANAGEMENT -> INBOUND ORDER -> ORDER ENTRY PAGE.
 
-public class Order_Entry_InboundModel : PageModel
+public class Order_Entry_InboundModel : BasePageModel
 {
     [BindProperty]
     public string Order_Description { get; set; }
@@ -87,24 +87,27 @@ public class Order_Entry_InboundModel : PageModel
     [BindProperty]
 
     public int item_id { get; set; }
-    public IActionResult OnGet()
+		[BindProperty]
+		public string Search_PONumber { get; set; }
+		public IActionResult OnGet()
     {
-        bool flag_username = string.IsNullOrEmpty(HttpContext.Session.GetString("username"));
-
-        if (flag_username)
-        {
-            return RedirectToPage("Index");
-        }
+            Search_PONumber = "";
         Fill_VendorList();
         Fill_ItemList();
-        Fill_Orders();
+        Fill_Orders(Search_PONumber);
         flag_no_order_open = true;
         return Page();
     }
-    
-    // THIS FUNCTION POPULATES DROPDOWN VENDORS WITH ALL ACTIVE VENDORS.    
 
-    public void Fill_VendorList()
+        public IActionResult OnPostOrderList()
+        {
+            Fill_Orders(Search_PONumber);
+            flag_no_order_open = true;
+            return Page();
+        }
+            // THIS FUNCTION POPULATES DROPDOWN VENDORS WITH ALL ACTIVE VENDORS.    
+
+            public void Fill_VendorList()
     {
         Vendor vendor = new Vendor();
         vendors = vendor.GetAllActive();
@@ -126,10 +129,9 @@ public class Order_Entry_InboundModel : PageModel
 
     public void Fill_ItemList()
     {
-        string warehouse = HttpContext.Session.GetString("warehouse");
-
+        
         Item item = new Item();
-        items = item.GetAll(warehouse);
+        items = item.GetAll(BaseWarehouse);
 
         itemList = new List<Item_Codes_Description>();
             if (items == null)
@@ -193,21 +195,22 @@ public class Order_Entry_InboundModel : PageModel
             flag_new_order_form = true;
             return Page();
         }
-        string user = HttpContext.Session.GetString("username");
-
+      
         if (string.IsNullOrEmpty(Order_Description))
             Order_Description = string.Empty;
 
         Order_Inbound order = new Order_Inbound();
         if (flag_updated)
         {
-            order.UpdateOrder(Order_ID, Order_Date, PONumber, Estimated_Arrival_Date, vendor_id, user,Order_Description);
+            order.UpdateOrder(Order_ID, Order_Date, PONumber, Estimated_Arrival_Date, vendor_id, BaseUserName, Order_Description);
             return Redirect("Order_Entry_Inbound");
         }
         else
         {
-			string warehouse = HttpContext.Session.GetString("warehouse");
-			Order_ID = order.InsertNewOrder(Order_Date, PONumber, Estimated_Arrival_Date, vendor_id, user,warehouse,Order_Description);
+            string POnum= GeneratePONumber();
+
+			Order_ID = order.InsertNewOrder(Order_Date, POnum, Estimated_Arrival_Date, vendor_id, BaseUserName,BaseWarehouse,Order_Description);
+                PONumber= POnum;
             flag_new_order_form = true;
             flag_item_entry_form = true;
         }
@@ -227,7 +230,7 @@ public class Order_Entry_InboundModel : PageModel
         flag_orders = true;
 
         Reset_Order_Form();
-        Fill_Orders();
+        Fill_Orders(Search_PONumber);
         return Page();
     }
 
@@ -322,12 +325,11 @@ public class Order_Entry_InboundModel : PageModel
     // THIS FUNCTION POPULTES INBOUND ORDERS GRID WITH ORDER STAUS='CREATED'.
     // NESTED ITEMS DETAILS ARE WITH IS_RECEIVED=false FIELD.
 
-    public void Fill_Orders()
+    public void Fill_Orders(string PONUMBER)
     {
         Order_Inbound order = new Order_Inbound();
-        string warehouse = HttpContext.Session.GetString("warehouse");
-
-		dt_orders = order.GetOrders(warehouse);
+        
+		dt_orders = order.GetOrders(BaseWarehouse, PONUMBER);
             
         nested_tables=new DataSet();
         
@@ -356,11 +358,11 @@ public class Order_Entry_InboundModel : PageModel
 
     public bool Check_Order_Input()
     {
-        if (string.IsNullOrEmpty(PONumber))
-        {
-            Msg_Order_Form = "Please Give PONumber.";
-            return false;
-        }
+        //if (string.IsNullOrEmpty(PONumber))
+        //{
+        //    Msg_Order_Form = "Please Give PONumber.";
+        //    return false;
+        //}
         if (vendor_id==0)
         {
             Msg_Order_Form = "Please Select Vendor Name.";
@@ -475,18 +477,18 @@ public class Order_Entry_InboundModel : PageModel
     // NEXT_VAL FORM DATABASE SEQUENCE.EXAMPLE "WMS-BRM-12".
 
 
-    public IActionResult OnPostGeneratePONumber()
+    public string GeneratePONumber()
     {
         GeneratePONumber generatePONumber = new GeneratePONumber();
         long next_val = generatePONumber.NextVal();
         Warehouse wh = new Warehouse();
-        string warehouse = HttpContext.Session.GetString("warehouse");
-        string po_abbrivation = wh.GetWarehouse_PO_Abbrivation(warehouse);
+       
+        string po_abbrivation = wh.GetWarehouse_PO_Abbrivation(BaseWarehouse);
 
-        PONumber = "WMS-" + po_abbrivation + "-" + next_val.ToString();
+       string PONumber = "WMS-" + po_abbrivation + "-" + next_val.ToString();
         flag_new_order_form = true;
         
-        return Page();
+        return PONumber;
     }
 
     }
